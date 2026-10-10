@@ -82,11 +82,13 @@ def fetch_one(item):
             if resp.status_code in (429,500,502,503):time.sleep(1.5*(attempt+1));continue
             resp.raise_for_status();result=resp.json()['chart']['result'][0]
             quote=result['indicators']['quote'][0]['close']
+            volumes=result['indicators']['quote'][0].get('volume',[])
+            historical=[{'date':dt.datetime.fromtimestamp(ts,ZoneInfo('Asia/Bangkok')).date().isoformat(),'close':round(float(price),4),'volume':int(vol) if vol is not None else None} for ts,price,vol in zip(result['timestamp'],quote,volumes) if price is not None and math.isfinite(float(price)) and float(price)>0]
             pairs=[(ts,float(price)) for ts,price in zip(result['timestamp'],quote)
                    if price is not None and math.isfinite(float(price)) and float(price)>0]
             if len(pairs)<80:record['reason']=f'only {len(pairs)} daily closes';return record
             prices=[p for _,p in pairs];v=calc(prices)
-            record.update(v);record.update(valid=True,close=round(prices[-1],4),
+            record.update(v);record['history']=historical[-260:];record.update(valid=True,close=round(prices[-1],4),
                           date=dt.datetime.fromtimestamp(pairs[-1][0],ZoneInfo('Asia/Bangkok')).date().isoformat())
             return record
         except Exception as e:
