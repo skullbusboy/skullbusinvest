@@ -36,7 +36,10 @@ jobs:
 
       - name: Scan Thai stocks
         run: python scan.py
-
+        
+      - name: Scan fundamentals
+        run: python fundamental_scan.py
+        
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
